@@ -1,4 +1,5 @@
 #include "Chip8.h"
+#include <fstream>
 #include <iostream>
 
 //standard chip8 font set for characters 0 through F
@@ -41,6 +42,25 @@ Chip8::Chip8() {
     //load the font set into interpreter memory starting at address 0x050
     for (unsigned int i = 0; i < 80; ++i) {
         memory[0x50 + i] = fontset[i];
+    }
+}
+
+void Chip8::loadROM(const char* filename) {
+    std::ifstream file(filename,std::ios::binary | std::ios::ate);
+    if (file.is_open()) {
+        std::streampos size = file.tellg();
+        char* buffer = new char[size];
+
+        file.seekg(0, std::ios::beg);
+        file.read(buffer, size);
+        file.close();
+        for (long i = 0; i < size; ++i) {
+            memory[0x200 + i] = buffer[i];
+        }
+
+        delete[] buffer;
+    } else {
+        std::cerr << "Failed to open ROM: " << filename << std::endl;
     }
 }
 

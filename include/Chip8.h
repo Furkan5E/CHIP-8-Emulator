@@ -4,6 +4,7 @@
 class Chip8 {
 public:
     Chip8();
+    void loadROM(const char* filename);
     void cycle();
 
     //memory and registers
