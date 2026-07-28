@@ -65,4 +65,36 @@ void Chip8::loadROM(const char* filename) {
 }
 
 void Chip8::cycle() {
+    //fetch opcode
+    //shift the first byte left by 8 bits then OR it with the second byte
+    opcode = (memory[pc] << 8) | memory[pc + 1];
+    //decode and execute
+    //bitwise AND with 0xF000 to isolate first nibble
+    switch (opcode & 0xF000) {
+        
+        case 0x1000: // 1NNN: jump to address NNN
+            pc = opcode & 0x0FFF;
+            break;
+
+        case 0xA000: // ANNN: set index register i to the address NNN
+            index = opcode & 0x0FFF;
+            pc += 2;
+            break;
+
+        default:
+            std::cerr << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
+            pc += 2; //prevent infinite loops if bad opcode
+            break;
+    }
+
+    //update timers
+    if (delay_timer > 0) {
+        --delay_timer;
+    }
+    if (sound_timer > 0) {
+        if (sound_timer == 1) {
+            std::cout << "sound\n";//placeholder
+        }
+        --sound_timer;
+    }
 }
