@@ -71,7 +71,28 @@ void Chip8::cycle() {
     //decode and execute
     //bitwise AND with 0xF000 to isolate first nibble
     switch (opcode & 0xF000) {
-        
+        case 0x0000:
+            switch (opcode & 0x00FF) {
+                case 0x00E0: // 00E0: clears screen
+                    memset(display, 0, sizeof(display));
+                    pc += 2;
+                    break;
+                case 0x00EE: // 00EE: returns from subroutine
+                    --sp;
+                    pc = stack[sp];
+                    pc += 2;
+                    break;
+                default:
+                    std::cerr << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
+                    pc += 2;
+                    break;
+            }
+            break;
+        case 0x2000: // 2NNN: Calls subroutine at NNN.
+            stack[sp] = pc;
+            ++sp;
+            pc = opcode & 0x0FFF;
+            break;
         case 0x1000: // 1NNN: jump to address NNN
             pc = opcode & 0x0FFF;
             break;
