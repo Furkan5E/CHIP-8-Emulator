@@ -88,11 +88,86 @@ void Chip8::cycle() {
                     break;
             }
             break;
-        case 0x2000: // 2NNN: Calls subroutine at NNN.
+        case 0x2000: // 2NNN: call subroutine at NNN
             stack[sp] = pc;
             ++sp;
             pc = opcode & 0x0FFF;
             break;
+        case 0x8000: {
+            //extract x and y register identifiers from opcode
+            uint8_t Vx = (opcode & 0x0F00) >> 8;
+            uint8_t Vy = (opcode & 0x00F0) >> 4;
+
+            switch (opcode & 0x000F) {
+                case 0x0000: // 8XY0: set Vx = Vy
+                    registers[Vx] = registers[Vy];
+                    pc += 2;
+                    break;
+
+                case 0x0001: // 8XY1: set Vx = Vx OR Vy
+                    registers[Vx] |= registers[Vy];
+                    pc += 2;
+                    break;
+
+                case 0x0002: // 8XY2: set Vx = Vx AND Vy
+                    registers[Vx] &= registers[Vy];
+                    pc += 2;
+                    break;
+
+                case 0x0003: // 8XY3: set Vx = Vx XOR Vy
+                    registers[Vx] ^= registers[Vy];
+                    pc += 2;
+                    break;
+
+                case 0x0004: // 8XY4: add Vy to Vx, set VF = carry
+                    if (registers[Vy] > (0xFF - registers[Vx])) {
+                        registers[0xF] = 1; // Overflow occurred
+                    } else {
+                        registers[0xF] = 0;
+                    }
+                    registers[Vx] += registers[Vy];
+                    pc += 2;
+                    break;
+
+                case 0x0005: // 8XY5: subtract Vy from Vx, set VF = NOT borrow
+                    if (registers[Vx] >= registers[Vy]) {
+                        registers[0xF] = 1; //no borrow
+                    } else {
+                        registers[0xF] = 0; //borrow occurred
+                    }
+                    registers[Vx] -= registers[Vy];
+                    pc += 2;
+                    break;
+
+                case 0x0006: // 8XY6: shift Vx right by 1, set VF = LSB before shift
+                    registers[0xF] = (registers[Vx] & 0x1);
+                    registers[Vx] >>= 1;
+                    pc += 2;
+                    break;
+
+                case 0x0007: // 8XY7: set Vx = Vy - Vx, set VF = NOT borrow
+                    if (registers[Vy] >= registers[Vx]) {
+                        registers[0xF] = 1; //no borrow
+                    } else {
+                        registers[0xF] = 0; //borrow occurred
+                    }
+                    registers[Vx] = registers[Vy] - registers[Vx];
+                    pc += 2;
+                    break;
+
+                case 0x000E: // 8XYE: shift Vx left by 1, set VF = MSB before shift
+                    registers[0xF] = (registers[Vx] & 0x80) >> 7;
+                    registers[Vx] <<= 1;
+                    pc += 2;
+                    break;
+
+                default:
+                    std::cerr << "Unknown 8-series opcode: 0x" << std::hex << opcode << std::endl;
+                    pc += 2;
+                    break;
+            }
+            break;
+        }
         case 0x1000: // 1NNN: jump to address NNN
             pc = opcode & 0x0FFF;
             break;
