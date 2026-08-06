@@ -1,6 +1,7 @@
 #include "Chip8.h"
 #include <fstream>
 #include <iostream>
+#include <cstdlib>
 
 //standard chip8 font set for characters 0 through F
 const uint8_t fontset[80] = {
@@ -88,11 +89,60 @@ void Chip8::cycle() {
                     break;
             }
             break;
+            
         case 0x2000: // 2NNN: call subroutine at NNN
             stack[sp] = pc;
             ++sp;
             pc = opcode & 0x0FFF;
             break;
+
+        case 0x3000: // 3XNN: skip next instruction if Vx == NN
+            if (registers[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)) {
+                pc += 4;
+            } else {
+                pc += 2;
+            }
+            break;
+
+        case 0x4000: // 4XNN: skip next instruction if Vx != NN
+            if (registers[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF)) {
+                pc += 4;
+            } else {
+                pc += 2;
+            }
+            break;
+
+        case 0x5000: // 5XY0: skip next instruction if Vx == Vy
+            if (registers[(opcode & 0x0F00) >> 8] == registers[(opcode & 0x00F0) >> 4]) {
+                pc += 4;
+            } else {
+                pc += 2;
+            }
+            break;
+
+        case 0x6000: // 6XNN: set Vx = NN
+            registers[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
+            pc += 2;
+            break;
+
+        case 0x7000: // 7XNN: add NN to Vx
+            registers[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
+            pc += 2;
+            break;
+
+        case 0x9000: // 9XY0: skip next instruction if Vx != Vy
+            if (registers[(opcode & 0x0F00) >> 8] != registers[(opcode & 0x00F0) >> 4]) {
+                pc += 4;
+            } else {
+                pc += 2;
+            }
+            break;
+
+        case 0xC000: // CXNN: set Vx = random byte AND NN
+            registers[(opcode & 0x0F00) >> 8] = (rand() % 256) & (opcode & 0x00FF);
+            pc += 2;
+            break;
+
         case 0x8000: {
             //extract x and y register identifiers from opcode
             uint8_t Vx = (opcode & 0x0F00) >> 8;
