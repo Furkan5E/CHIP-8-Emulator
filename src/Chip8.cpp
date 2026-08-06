@@ -177,6 +177,41 @@ void Chip8::cycle() {
             pc += 2;
             break;
 
+        case 0xD000: { // DXYN: draw sprite
+            uint8_t Vx = (opcode & 0x0F00) >> 8;
+            uint8_t Vy = (opcode & 0x00F0) >> 4;
+            uint8_t height = opcode & 0x000F;
+            uint8_t xPos = registers[Vx] % 64;
+            uint8_t yPos = registers[Vy] % 32;
+
+            registers[0xF] = 0; //reset collision flag
+            for (unsigned int row = 0; row < height; ++row) {
+                //fetch the sprite data byte from memory at the current index
+                uint8_t spriteByte = memory[index + row];
+
+                for (unsigned int col = 0; col < 8; ++col) {
+                    //isolate current bit in sprite byte
+                    uint8_t spritePixel = spriteByte & (0x80 >> col);
+                    //if edge it clips the sprite
+                    if ((xPos + col) >= 64 || (yPos + row) >= 32) {
+                        continue; 
+                    }
+
+                    //calculate array index for display array
+                    unsigned int pixelIndex = ((yPos + row) * 64) + (xPos + col);
+                    if (spritePixel != 0) {
+                        //if the display pixel is already ON collision happens
+                        if (display[pixelIndex] == 0xFFFFFFFF) {
+                            registers[0xF] = 1;
+                        }
+                        //XOR display pixel 
+                        display[pixelIndex] ^= 0xFFFFFFFF;
+                    }
+                }
+            }
+            pc += 2;
+            break;
+        }
         default:
             std::cerr << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
             pc += 2; //prevent infinite loops if bad opcode
