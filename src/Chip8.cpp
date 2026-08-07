@@ -89,7 +89,7 @@ void Chip8::cycle() {
                     break;
             }
             break;
-            
+
         case 0x2000: // 2NNN: call subroutine at NNN
             stack[sp] = pc;
             ++sp;
@@ -213,6 +213,34 @@ void Chip8::cycle() {
 
                 default:
                     std::cerr << "Unknown 8-series opcode: 0x" << std::hex << opcode << std::endl;
+                    pc += 2;
+                    break;
+            }
+            break;
+        }
+        case 0xE000: {
+            uint8_t Vx = (opcode & 0x0F00) >> 8;
+            uint8_t key = registers[Vx];
+
+            switch (opcode & 0x00FF) {
+                case 0x009E: // EX9E: skip next instruction if key stored in Vx is pressed
+                    if (keypad[key] != 0) {
+                        pc += 4;
+                    } else {
+                        pc += 2;
+                    }
+                    break;
+
+                case 0x00A1: // EXA1: skip next instruction if key stored in Vx is NOT pressed
+                    if (keypad[key] == 0) {
+                        pc += 4;
+                    } else {
+                        pc += 2;
+                    }
+                    break;
+
+                default:
+                    std::cerr << "Unknown E-series opcode: 0x" << std::hex << opcode << std::endl;
                     pc += 2;
                     break;
             }
