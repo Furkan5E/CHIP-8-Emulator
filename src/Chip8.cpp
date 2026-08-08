@@ -246,6 +246,78 @@ void Chip8::cycle() {
             }
             break;
         }
+        case 0xF000: {
+            uint8_t Vx = (opcode & 0x0F00) >> 8;
+            switch (opcode & 0x00FF) {
+                case 0x0007: // FX07: set Vx = delay timer value
+                    registers[Vx] = delay_timer;
+                    pc += 2;
+                    break;
+
+                case 0x000A: { // FX0A: wait for key press store the value of key in Vx
+                    bool key_pressed = false;
+                    for (int i = 0; i < 16; ++i) {
+                        if (keypad[i] != 0) {
+                            registers[Vx] = i;
+                            key_pressed = true;
+                        }
+                    }
+                    //if no key pressed return without incrementing PC
+                    if (!key_pressed) {
+                        return;
+                    }
+                    pc += 2;
+                    break;
+                }
+                case 0x0015: // FX15: set delay timer = Vx
+                    delay_timer = registers[Vx];
+                    pc += 2;
+                    break;
+
+                case 0x0018: // FX18: set sound timer = Vx
+                    sound_timer = registers[Vx];
+                    pc += 2;
+                    break;
+
+                case 0x001E: // FX1E: add Vx to i
+                    index += registers[Vx];
+                    pc += 2;
+                    break;
+
+                case 0x0029: // FX29: set i = location of sprite for digit Vx
+                    //characters are 5 bytes long
+                    index = 0x50 + (5 * registers[Vx]);
+                    pc += 2;
+                    break;
+
+                case 0x0033: // FX33: store BCD representation of Vx in memory
+                    memory[index]     = registers[Vx] / 100; //hundreds digit
+                    memory[index + 1] = (registers[Vx] / 10) % 10; //tens digit
+                    memory[index + 2] = (registers[Vx] % 100) % 10; // ones digit
+                    pc += 2;
+                    break;
+
+                case 0x0055: // FX55: store registers V0 to Vx in memory
+                    for (uint8_t i = 0; i <= Vx; ++i) {
+                        memory[index + i] = registers[i];
+                    }
+                    pc += 2;
+                    break;
+
+                case 0x0065: // FX65: read registers V0 to Vx from memory
+                    for (uint8_t i = 0; i <= Vx; ++i) {
+                        registers[i] = memory[index + i];
+                    }
+                    pc += 2;
+                    break;
+
+                default:
+                    std::cerr << "Unknown F-series opcode: 0x" << std::hex << opcode << std::endl;
+                    pc += 2;
+                    break;
+            }
+            break;
+        }
         case 0x1000: // 1NNN: jump to address NNN
             pc = opcode & 0x0FFF;
             break;
