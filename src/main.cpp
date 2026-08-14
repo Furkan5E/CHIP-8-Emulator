@@ -39,10 +39,48 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     SDL_Event e;
     while (!quit) {
-        // Handle input events
+        //handle input events
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 quit = true;
+            } else if (e.type == SDL_KEYDOWN) {
+                switch (e.key.keysym.sym) {
+                    case SDLK_x: cpu.keypad[0] = 1; break;
+                    case SDLK_1: cpu.keypad[1] = 1; break;
+                    case SDLK_2: cpu.keypad[2] = 1; break;
+                    case SDLK_3: cpu.keypad[3] = 1; break;
+                    case SDLK_q: cpu.keypad[4] = 1; break;
+                    case SDLK_w: cpu.keypad[5] = 1; break;
+                    case SDLK_e: cpu.keypad[6] = 1; break;
+                    case SDLK_a: cpu.keypad[7] = 1; break;
+                    case SDLK_s: cpu.keypad[8] = 1; break;
+                    case SDLK_d: cpu.keypad[9] = 1; break;
+                    case SDLK_z: cpu.keypad[0xA] = 1; break;
+                    case SDLK_c: cpu.keypad[0xB] = 1; break;
+                    case SDLK_4: cpu.keypad[0xC] = 1; break;
+                    case SDLK_r: cpu.keypad[0xD] = 1; break;
+                    case SDLK_f: cpu.keypad[0xE] = 1; break;
+                    case SDLK_v: cpu.keypad[0xF] = 1; break;
+                }
+            } else if (e.type == SDL_KEYUP) {
+                switch (e.key.keysym.sym) {
+                    case SDLK_x: cpu.keypad[0] = 0; break;
+                    case SDLK_1: cpu.keypad[1] = 0; break;
+                    case SDLK_2: cpu.keypad[2] = 0; break;
+                    case SDLK_3: cpu.keypad[3] = 0; break;
+                    case SDLK_q: cpu.keypad[4] = 0; break;
+                    case SDLK_w: cpu.keypad[5] = 0; break;
+                    case SDLK_e: cpu.keypad[6] = 0; break;
+                    case SDLK_a: cpu.keypad[7] = 0; break;
+                    case SDLK_s: cpu.keypad[8] = 0; break;
+                    case SDLK_d: cpu.keypad[9] = 0; break;
+                    case SDLK_z: cpu.keypad[0xA] = 0; break;
+                    case SDLK_c: cpu.keypad[0xB] = 0; break;
+                    case SDLK_4: cpu.keypad[0xC] = 0; break;
+                    case SDLK_r: cpu.keypad[0xD] = 0; break;
+                    case SDLK_f: cpu.keypad[0xE] = 0; break;
+                    case SDLK_v: cpu.keypad[0xF] = 0; break;
+                }
             }
         }
 
