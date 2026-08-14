@@ -33,7 +33,12 @@ int main(int argc, char* argv[]) {
     );
 
     Chip8 cpu;
-    //cpu.loadROM("roms/test_opcode.ch8");
+    if (argc > 1) {
+        cpu.loadROM(argv[1]);
+    } else {
+        std::cerr << "Usage: " << argv[0] << " <ROM_FILE_PATH>\n";
+        return -1;
+    }
 
     //game loop
     bool quit = false;
@@ -83,12 +88,14 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+        cpu.cycle();
 
         //draw CPU display array to screen
         SDL_UpdateTexture(texture, nullptr, cpu.display, sizeof(cpu.display[0]) * 64);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
+        SDL_Delay(2);
     }
 
     //clean up
