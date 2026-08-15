@@ -367,15 +367,4 @@ void Chip8::cycle() {
             pc += 2; //prevent infinite loops if bad opcode
             break;
     }
-
-    //update timers
-    if (delay_timer > 0) {
-        --delay_timer;
-    }
-    if (sound_timer > 0) {
-        if (sound_timer == 1) {
-            std::cout << "sound\n";//placeholder
-        }
-        --sound_timer;
-    }
 }

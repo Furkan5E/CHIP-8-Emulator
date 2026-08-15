@@ -43,7 +43,15 @@ int main(int argc, char* argv[]) {
     //game loop
     bool quit = false;
     SDL_Event e;
+    
+    const int FPS = 60;
+    const int frameDelay = 1000 / FPS;
+    Uint32 frameStart;
+    int frameTime;
+
     while (!quit) {
+        frameStart = SDL_GetTicks();
+
         //handle input events
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -88,14 +96,32 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
-        cpu.cycle();
+        for (int i = 0; i < 10; ++i) {
+            cpu.cycle();
+        }
+
+        //update timers
+        if (cpu.delay_timer > 0) {
+            --cpu.delay_timer;
+        }
+        if (cpu.sound_timer > 0) {
+            if (cpu.sound_timer == 1) {
+                std::cout << "sound\n"; 
+            }
+            --cpu.sound_timer;
+        }
 
         //draw CPU display array to screen
         SDL_UpdateTexture(texture, nullptr, cpu.display, sizeof(cpu.display[0]) * 64);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
-        SDL_Delay(2);
+
+        //delay to get 60 FPS
+        frameTime = SDL_GetTicks() - frameStart;
+        if (frameDelay > frameTime) {
+            SDL_Delay(frameDelay - frameTime);
+        }
     }
 
     //clean up
