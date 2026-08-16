@@ -3,12 +3,28 @@
 #include <SDL.h>
 #include <iostream>
 
+// Audio callback to generate a simple square wave (approx 440Hz)
+void audioCallback(void* userdata, Uint8* stream, int len) {
+    static int phase = 0;
+    int16_t* buffer = (int16_t*)stream;
+    int length = len / 2; // 16-bit audio
+    int volume = 3000;    // Adjust this to change the volume
+
+    for (int i = 0; i < length; ++i) {
+        // Switch between positive and negative volume every 50 samples
+        buffer[i] = ((phase++ / 50) % 2 == 0) ? volume : -volume; 
+    }
+}
+
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    
+    // Initialize SDL for both VIDEO and AUDIO
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
         return -1;
     }
+    
     //create window
     const int SCALE = 10;
     SDL_Window* window = SDL_CreateWindow(
@@ -24,6 +40,7 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    
     // create texture
     SDL_Texture* texture = SDL_CreateTexture(
         renderer, 
@@ -31,6 +48,20 @@ int main(int argc, char* argv[]) {
         SDL_TEXTUREACCESS_STREAMING, 
         64, 32
     );
+
+    // Configure Audio Device
+    SDL_AudioSpec want, have;
+    SDL_zero(want);
+    want.freq = 44100;
+    want.format = AUDIO_S16SYS;
+    want.channels = 1;
+    want.samples = 2048;
+    want.callback = audioCallback;
+
+    SDL_AudioDeviceID audioDevice = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    if (audioDevice == 0) {
+        std::cerr << "Failed to open audio: " << SDL_GetError() << "\n";
+    }
 
     Chip8 cpu;
     if (argc > 1) {
@@ -96,19 +127,20 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+        
         for (int i = 0; i < 10; ++i) {
             cpu.cycle();
         }
 
-        //update timers
+        //update timers and audio
         if (cpu.delay_timer > 0) {
             --cpu.delay_timer;
         }
         if (cpu.sound_timer > 0) {
-            if (cpu.sound_timer == 1) {
-                std::cout << "sound\n"; 
-            }
+            SDL_PauseAudioDevice(audioDevice, 0); // Play sound
             --cpu.sound_timer;
+        } else {
+            SDL_PauseAudioDevice(audioDevice, 1); // Pause sound
         }
 
         //draw CPU display array to screen
@@ -125,6 +157,7 @@ int main(int argc, char* argv[]) {
     }
 
     //clean up
+    SDL_CloseAudioDevice(audioDevice);
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
