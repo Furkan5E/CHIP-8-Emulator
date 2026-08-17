@@ -2,35 +2,56 @@
 #include "Chip8.h"
 #include <SDL.h>
 #include <iostream>
+#include <string>
 
-// Audio callback to generate a simple square wave (approx 440Hz)
 void audioCallback(void* userdata, Uint8* stream, int len) {
     static int phase = 0;
     int16_t* buffer = (int16_t*)stream;
-    int length = len / 2; // 16-bit audio
-    int volume = 3000;    // Adjust this to change the volume
+    int length = len / 2;
+    int volume = 3000;
 
     for (int i = 0; i < length; ++i) {
-        // Switch between positive and negative volume every 50 samples
+        //switch between positive and negative volume every 50 samples
         buffer[i] = ((phase++ / 50) % 2 == 0) ? volume : -volume; 
     }
 }
 
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();
+
+    //default config
+    int scale = 10;
+    int speed = 10;
+    const char* romPath = nullptr;
+
+    //parse command line arguments
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--scale" && i + 1 < argc) {
+            scale = std::stoi(argv[++i]);
+        } else if (arg == "--speed" && i + 1 < argc) {
+            speed = std::stoi(argv[++i]);
+        } else {
+            romPath = argv[i];
+        }
+    }
+
+    if (!romPath) {
+        std::cerr << "Usage: " << argv[0] << " <ROM_FILE_PATH> [--scale <int>] [--speed <int>]\n";
+        return -1;
+    }
     
-    // Initialize SDL for both VIDEO and AUDIO
+    //initialise SDL for VIDEO and AUDIO
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
         return -1;
     }
     
     //create window
-    const int SCALE = 10;
     SDL_Window* window = SDL_CreateWindow(
         "CHIP-8 Emulator", 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-        64 * SCALE, 32 * SCALE, 
+        64 * scale, 32 * scale, 
         SDL_WINDOW_SHOWN
     );
     if (!window) {
@@ -64,17 +85,14 @@ int main(int argc, char* argv[]) {
     }
 
     Chip8 cpu;
-    if (argc > 1) {
-        cpu.loadROM(argv[1]);
-    } else {
-        std::cerr << "Usage: " << argv[0] << " <ROM_FILE_PATH>\n";
-        return -1;
-    }
-
-    //game loop
+    cpu.loadROM(romPath);
     bool quit = false;
+    bool isPaused = false;
+    uint32_t fgColor = 0xFF33FF33;
+    uint32_t bgColor = 0xFF111111;
+    uint32_t pixelBuffer[64 * 32];
+
     SDL_Event e;
-    
     const int FPS = 60;
     const int frameDelay = 1000 / FPS;
     Uint32 frameStart;
@@ -89,6 +107,16 @@ int main(int argc, char* argv[]) {
                 quit = true;
             } else if (e.type == SDL_KEYDOWN) {
                 switch (e.key.keysym.sym) {
+                    // QoL Controls
+                    case SDLK_ESCAPE: 
+                        cpu = Chip8(); //reset CPU state
+                        cpu.loadROM(romPath); //reload game
+                        break;
+                    case SDLK_p: 
+                        isPaused = !isPaused; 
+                        break;
+
+                    //standard CHIP-8 Keypad
                     case SDLK_x: cpu.keypad[0] = 1; break;
                     case SDLK_1: cpu.keypad[1] = 1; break;
                     case SDLK_2: cpu.keypad[2] = 1; break;
@@ -128,23 +156,32 @@ int main(int argc, char* argv[]) {
             }
         }
         
-        for (int i = 0; i < 10; ++i) {
-            cpu.cycle();
-        }
+        if (!isPaused) {
+            for (int i = 0; i < speed; ++i) {
+                cpu.cycle();
+            }
 
-        //update timers and audio
-        if (cpu.delay_timer > 0) {
-            --cpu.delay_timer;
-        }
-        if (cpu.sound_timer > 0) {
-            SDL_PauseAudioDevice(audioDevice, 0); // Play sound
-            --cpu.sound_timer;
+            //update timers and audio
+            if (cpu.delay_timer > 0) {
+                --cpu.delay_timer;
+            }
+            if (cpu.sound_timer > 0) {
+                SDL_PauseAudioDevice(audioDevice, 0); //play sound
+                --cpu.sound_timer;
+            } else {
+                SDL_PauseAudioDevice(audioDevice, 1); //pause sound
+            }
         } else {
-            SDL_PauseAudioDevice(audioDevice, 1); // Pause sound
+            SDL_PauseAudioDevice(audioDevice, 1); //silence audio when paused
         }
 
-        //draw CPU display array to screen
-        SDL_UpdateTexture(texture, nullptr, cpu.display, sizeof(cpu.display[0]) * 64);
+        //map CPU display to custom colors
+        for (int i = 0; i < 64 * 32; ++i) {
+            pixelBuffer[i] = (cpu.display[i] != 0) ? fgColor : bgColor;
+        }
+
+        //draw mapped pixel buffer to screen
+        SDL_UpdateTexture(texture, nullptr, pixelBuffer, sizeof(pixelBuffer[0]) * 64);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
