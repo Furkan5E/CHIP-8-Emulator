@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
 
 //standard chip8 font set for characters 0 through F
 const uint8_t fontset[80] = {
