@@ -337,6 +337,10 @@ void Chip8::cycle() {
             pc += 2;
             break;
 
+        case 0xB000: // BNNN: jump to address NNN + V0
+            pc = (opcode & 0x0FFF) + registers[0];
+            break;
+
         case 0xD000: { // DXYN: draw sprite
             uint8_t Vx = (opcode & 0x0F00) >> 8;
             uint8_t Vy = (opcode & 0x00F0) >> 4;
