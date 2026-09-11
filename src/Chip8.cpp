@@ -47,29 +47,38 @@ Chip8::Chip8() {
     }
 }
 
-void Chip8::loadROM(const char* filename) {
+bool Chip8::loadROM(const char* filename) {
     std::ifstream file(filename,std::ios::binary | std::ios::ate);
-    if (file.is_open()) {
-        std::streampos size = file.tellg();
-        char* buffer = new char[size];
-
-        file.seekg(0, std::ios::beg);
-        file.read(buffer, size);
-        file.close();
-        for (long i = 0; i < size; ++i) {
-            memory[0x200 + i] = buffer[i];
-        }
-
-        delete[] buffer;
-    } else {
+    if (!file.is_open()) {
         std::cerr << "Failed to open ROM: " << filename << std::endl;
+        return false;
     }
+
+    //ROM is loaded at 0x200 so it can use at most the remaining memory
+    const std::streamoff maxSize = sizeof(memory) - 0x200;
+    std::streamoff size = file.tellg();
+    if (size <= 0) {
+        std::cerr << "Failed to read ROM or ROM is empty: " << filename << std::endl;
+        return false;
+    }
+    if (size > maxSize) {
+        std::cerr << "ROM is too large (" << size << " bytes, max " << maxSize << "): " << filename << std::endl;
+        return false;
+    }
+
+    file.seekg(0, std::ios::beg);
+    if (!file.read(reinterpret_cast<char*>(&memory[0x200]), size)) {
+        std::cerr << "Failed to read ROM: " << filename << std::endl;
+        return false;
+    }
+    return true;
 }
 
 void Chip8::cycle() {
     //fetch opcode
     //shift the first byte left by 8 bits then OR it with the second byte
-    opcode = (memory[pc] << 8) | memory[pc + 1];
+    //wrap addresses to 12 bits so a runaway PC can't read past memory
+    opcode = (memory[pc & 0xFFF] << 8) | memory[(pc + 1) & 0xFFF];
     //decode and execute
     //bitwise AND with 0xF000 to isolate first nibble
     switch (opcode & 0xF000) {

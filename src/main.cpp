@@ -40,7 +40,13 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage: " << argv[0] << " <ROM_FILE_PATH> [--scale <int>] [--speed <int>]\n";
         return -1;
     }
-    
+
+    //load the ROM before starting SDL so a bad path exits cleanly
+    Chip8 cpu;
+    if (!cpu.loadROM(romPath)) {
+        return -1;
+    }
+
     //initialise SDL for VIDEO and AUDIO
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
@@ -84,8 +90,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Failed to open audio: " << SDL_GetError() << "\n";
     }
 
-    Chip8 cpu;
-    cpu.loadROM(romPath);
     bool quit = false;
     bool isPaused = false;
     uint32_t fgColor = 0xFF33FF33;
@@ -110,7 +114,9 @@ int main(int argc, char* argv[]) {
                     // QoL Controls
                     case SDLK_ESCAPE: 
                         cpu = Chip8(); //reset CPU state
-                        cpu.loadROM(romPath); //reload game
+                        if (!cpu.loadROM(romPath)) { //reload game
+                            quit = true;
+                        }
                         break;
                     case SDLK_p: 
                         isPaused = !isPaused; 
