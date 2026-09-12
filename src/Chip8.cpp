@@ -231,7 +231,8 @@ void Chip8::cycle() {
         }
         case 0xE000: {
             uint8_t Vx = (opcode & 0x0F00) >> 8;
-            uint8_t key = registers[Vx];
+            //only the low nibble is a valid key (keypad has 16 keys)
+            uint8_t key = registers[Vx] & 0xF;
 
             switch (opcode & 0x00FF) {
                 case 0x009E: // EX9E: skip next instruction if key stored in Vx is pressed
