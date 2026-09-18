@@ -89,6 +89,12 @@ void Chip8::cycle() {
                     pc += 2;
                     break;
                 case 0x00EE: // 00EE: returns from subroutine
+                    //nothing to return to so skip instead of underflowing sp
+                    if (sp == 0) {
+                        std::cerr << "Stack underflow at 0x" << std::hex << pc << std::endl;
+                        pc += 2;
+                        break;
+                    }
                     --sp;
                     pc = stack[sp];
                     pc += 2;
@@ -101,6 +107,12 @@ void Chip8::cycle() {
             break;
 
         case 0x2000: // 2NNN: call subroutine at NNN
+            //stack is full so skip the call instead of writing past it
+            if (sp >= 16) {
+                std::cerr << "Stack overflow at 0x" << std::hex << pc << std::endl;
+                pc += 2;
+                break;
+            }
             stack[sp] = pc;
             ++sp;
             pc = opcode & 0x0FFF;
