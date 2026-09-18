@@ -304,7 +304,8 @@ void Chip8::cycle() {
                     break;
 
                 case 0x001E: // FX1E: add Vx to i
-                    index += registers[Vx];
+                    //keep i inside the 12 bit address space
+                    index = (index + registers[Vx]) & 0xFFF;
                     pc += 2;
                     break;
 
@@ -314,23 +315,25 @@ void Chip8::cycle() {
                     pc += 2;
                     break;
 
+                //addresses built from i wrap at 0xFFF so they stay inside memory
+
                 case 0x0033: // FX33: store BCD representation of Vx in memory
-                    memory[index]     = registers[Vx] / 100; //hundreds digit
-                    memory[index + 1] = (registers[Vx] / 10) % 10; //tens digit
-                    memory[index + 2] = (registers[Vx] % 100) % 10; // ones digit
+                    memory[index & 0xFFF]       = registers[Vx] / 100; //hundreds digit
+                    memory[(index + 1) & 0xFFF] = (registers[Vx] / 10) % 10; //tens digit
+                    memory[(index + 2) & 0xFFF] = (registers[Vx] % 100) % 10; // ones digit
                     pc += 2;
                     break;
 
                 case 0x0055: // FX55: store registers V0 to Vx in memory
                     for (uint8_t i = 0; i <= Vx; ++i) {
-                        memory[index + i] = registers[i];
+                        memory[(index + i) & 0xFFF] = registers[i];
                     }
                     pc += 2;
                     break;
 
                 case 0x0065: // FX65: read registers V0 to Vx from memory
                     for (uint8_t i = 0; i <= Vx; ++i) {
-                        registers[i] = memory[index + i];
+                        registers[i] = memory[(index + i) & 0xFFF];
                     }
                     pc += 2;
                     break;
@@ -365,7 +368,7 @@ void Chip8::cycle() {
             registers[0xF] = 0; //reset collision flag
             for (unsigned int row = 0; row < height; ++row) {
                 //fetch the sprite data byte from memory at the current index
-                uint8_t spriteByte = memory[index + row];
+                uint8_t spriteByte = memory[(index + row) & 0xFFF];
 
                 for (unsigned int col = 0; col < 8; ++col) {
                     //isolate current bit in sprite byte
