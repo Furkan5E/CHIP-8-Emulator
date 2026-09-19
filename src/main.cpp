@@ -3,6 +3,8 @@
 #include <SDL.h>
 #include <iostream>
 #include <string>
+#include <cerrno>
+#include <cstdlib>
 
 void audioCallback(void* userdata, Uint8* stream, int len) {
     static int phase = 0;
@@ -16,6 +18,18 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
     }
 }
 
+//parse a whole string as an int within [min, max]
+bool parseInt(const char* text, int min, int max, int& out) {
+    char* end = nullptr;
+    errno = 0;
+    long value = std::strtol(text, &end, 10);
+    if (end == text || *end != '\0' || errno == ERANGE || value < min || value > max) {
+        return false;
+    }
+    out = static_cast<int>(value);
+    return true;
+}
+
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();
 
@@ -23,21 +37,34 @@ int main(int argc, char* argv[]) {
     int scale = 10;
     int speed = 10;
     const char* romPath = nullptr;
+    const std::string usage = std::string("Usage: ") + argv[0] + " <ROM_FILE_PATH> [--scale <1-100>] [--speed <1-1000>]\n";
 
     //parse command line arguments
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        if (arg == "--scale" && i + 1 < argc) {
-            scale = std::stoi(argv[++i]);
-        } else if (arg == "--speed" && i + 1 < argc) {
-            speed = std::stoi(argv[++i]);
+        if (arg == "--scale" || arg == "--speed") {
+            if (i + 1 >= argc) {
+                std::cerr << "Missing value for " << arg << "\n" << usage;
+                return -1;
+            }
+            bool isScale = (arg == "--scale");
+            if (!parseInt(argv[++i], 1, isScale ? 100 : 1000, isScale ? scale : speed)) {
+                std::cerr << "Invalid value for " << arg << ": " << argv[i] << "\n" << usage;
+                return -1;
+            }
+        } else if (arg.rfind("--", 0) == 0) {
+            std::cerr << "Unknown option: " << arg << "\n" << usage;
+            return -1;
+        } else if (romPath) {
+            std::cerr << "Only one ROM path can be given\n" << usage;
+            return -1;
         } else {
             romPath = argv[i];
         }
     }
 
     if (!romPath) {
-        std::cerr << "Usage: " << argv[0] << " <ROM_FILE_PATH> [--scale <int>] [--speed <int>]\n";
+        std::cerr << usage;
         return -1;
     }
 
