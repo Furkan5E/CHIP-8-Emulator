@@ -118,8 +118,13 @@ int main(int argc, char* argv[]) {
                             quit = true;
                         }
                         break;
-                    case SDLK_p: 
-                        isPaused = !isPaused; 
+                    case SDLK_p:
+                        //ignore key repeat so holding P doesn't flicker pause
+                        if (e.key.repeat) {
+                            break;
+                        }
+                        isPaused = !isPaused;
+                        SDL_SetWindowTitle(window, isPaused ? "CHIP-8 Emulator [Paused]" : "CHIP-8 Emulator");
                         break;
 
                     //standard CHIP-8 Keypad
