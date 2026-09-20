@@ -14,7 +14,9 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 
     for (int i = 0; i < length; ++i) {
         //switch between positive and negative volume every 50 samples
-        buffer[i] = ((phase++ / 50) % 2 == 0) ? volume : -volume; 
+        buffer[i] = (phase < 50) ? volume : -volume;
+        //wrap after one full period so the counter never overflows
+        phase = (phase + 1) % 100;
     }
 }
 
