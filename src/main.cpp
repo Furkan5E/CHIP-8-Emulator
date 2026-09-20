@@ -94,14 +94,27 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    
+    if (!renderer) {
+        std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << "\n";
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
+
     // create texture
     SDL_Texture* texture = SDL_CreateTexture(
-        renderer, 
-        SDL_PIXELFORMAT_ARGB8888, 
-        SDL_TEXTUREACCESS_STREAMING, 
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
         64, 32
     );
+    if (!texture) {
+        std::cerr << "Texture could not be created! SDL_Error: " << SDL_GetError() << "\n";
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
 
     // Configure Audio Device
     SDL_AudioSpec want, have;
