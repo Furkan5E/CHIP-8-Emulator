@@ -1,7 +1,6 @@
 #include "Chip8.h"
 #include <fstream>
 #include <iostream>
-#include <cstdlib>
 #include <cstring>
 
 //standard chip8 font set for characters 0 through F
@@ -161,7 +160,7 @@ void Chip8::cycle() {
             break;
 
         case 0xC000: // CXNN: set Vx = random byte AND NN
-            registers[(opcode & 0x0F00) >> 8] = (rand() % 256) & (opcode & 0x00FF);
+            registers[(opcode & 0x0F00) >> 8] = (rng() & 0xFF) & (opcode & 0x00FF);
             pc += 2;
             break;
 

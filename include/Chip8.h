@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <random>
 
 class Chip8 {
 public:
@@ -23,4 +24,7 @@ public:
     uint8_t keypad[16]; //hex keypad
     uint32_t display[64 * 32]; //64x32 display pixels
     uint16_t opcode; //current executing opcode
+
+    //random source for CXNN, seeded differently every run
+    std::mt19937 rng{std::random_device{}()};
 };
