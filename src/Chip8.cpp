@@ -278,18 +278,24 @@ void Chip8::cycle() {
                     pc += 2;
                     break;
 
-                case 0x000A: { // FX0A: wait for key press store the value of key in Vx
-                    bool key_pressed = false;
-                    for (int i = 0; i < 16; ++i) {
-                        if (keypad[i] != 0) {
-                            registers[Vx] = i;
-                            key_pressed = true;
+                case 0x000A: { // FX0A: wait for key press and release, store the value of key in Vx
+                    //first remember which key goes down
+                    if (waitingKey < 0) {
+                        for (int i = 0; i < 16; ++i) {
+                            if (keypad[i] != 0) {
+                                waitingKey = i;
+                                break;
+                            }
                         }
-                    }
-                    //if no key pressed return without incrementing PC
-                    if (!key_pressed) {
+                        //still waiting, return without incrementing PC
                         return;
                     }
+                    //then only continue once that key is released
+                    if (keypad[waitingKey] != 0) {
+                        return;
+                    }
+                    registers[Vx] = waitingKey;
+                    waitingKey = -1;
                     pc += 2;
                     break;
                 }

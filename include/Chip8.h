@@ -24,6 +24,7 @@ public:
     uint8_t keypad[16]; //hex keypad
     uint32_t display[64 * 32]; //64x32 display pixels
     uint16_t opcode; //current executing opcode
+    int8_t waitingKey = -1; //key FX0A is waiting to be released, -1 if none
 
     //random source for CXNN, seeded differently every run
     std::mt19937 rng{std::random_device{}()};
