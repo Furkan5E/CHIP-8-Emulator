@@ -82,7 +82,8 @@ void Chip8::cycle() {
     //bitwise AND with 0xF000 to isolate first nibble
     switch (opcode & 0xF000) {
         case 0x0000:
-            switch (opcode & 0x00FF) {
+            //match the full opcode so 0NNN machine code calls aren't mistaken for 00E0/00EE
+            switch (opcode) {
                 case 0x00E0: // 00E0: clears screen
                     memset(display, 0, sizeof(display));
                     pc += 2;
