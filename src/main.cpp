@@ -140,13 +140,13 @@ int main(int argc, char* argv[]) {
 
     SDL_Event e;
     const int FPS = 60;
-    const int frameDelay = 1000 / FPS;
-    Uint32 frameStart;
-    int frameTime;
+    //schedule frames against fixed deadlines on the high resolution counter so
+    //they average exactly 60 Hz (a whole ms delay per frame drifts off 60 Hz)
+    const Uint64 perfFreq = SDL_GetPerformanceFrequency();
+    const Uint64 frameTicks = perfFreq / FPS;
+    Uint64 nextFrame = SDL_GetPerformanceCounter() + frameTicks;
 
     while (!quit) {
-        frameStart = SDL_GetTicks();
-
         //handle input events
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -239,10 +239,16 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        //delay to get 60 FPS
-        frameTime = SDL_GetTicks() - frameStart;
-        if (frameDelay > frameTime) {
-            SDL_Delay(frameDelay - frameTime);
+        //wait until this frame's deadline then schedule the next one
+        Uint64 now = SDL_GetPerformanceCounter();
+        if (now < nextFrame) {
+            SDL_Delay(static_cast<Uint32>((nextFrame - now) * 1000 / perfFreq));
+        }
+        nextFrame += frameTicks;
+        //if we fell more than a frame behind (e.g. window dragged) resync instead of racing to catch up
+        now = SDL_GetPerformanceCounter();
+        if (now > nextFrame + frameTicks) {
+            nextFrame = now + frameTicks;
         }
     }
 
