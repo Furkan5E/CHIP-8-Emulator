@@ -12,7 +12,7 @@ public:
 
     // I/O for the frontend
     void setKey(uint8_t key, bool pressed);
-    const uint32_t* getDisplay() const { return display; }
+    const uint8_t* getDisplay() const { return display; } //64x32 pixels, 1 = on
     bool isSoundOn() const { return sound_timer > 0; }
 
 private:
@@ -30,7 +30,7 @@ private:
 
     // I/O
     uint8_t keypad[16]; //hex keypad
-    uint32_t display[64 * 32]; //64x32 display pixels
+    uint8_t display[64 * 32]; //64x32 display pixels, 1 = on, 0 = off
     uint16_t opcode; //current executing opcode
     int8_t waitingKey; //key FX0A is waiting to be released, -1 if none
 

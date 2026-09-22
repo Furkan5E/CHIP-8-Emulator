@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
         }
 
         //map CPU display to custom colors
-        const uint32_t* display = cpu.getDisplay();
+        const uint8_t* display = cpu.getDisplay();
         for (int i = 0; i < 64 * 32; ++i) {
             pixelBuffer[i] = (display[i] != 0) ? fgColor : bgColor;
         }

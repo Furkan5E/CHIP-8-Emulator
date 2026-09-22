@@ -406,11 +406,11 @@ void Chip8::cycle() {
                     unsigned int pixelIndex = ((yPos + row) * 64) + (xPos + col);
                     if (spritePixel != 0) {
                         //if the display pixel is already ON collision happens
-                        if (display[pixelIndex] == 0xFFFFFFFF) {
+                        if (display[pixelIndex] != 0) {
                             registers[0xF] = 1;
                         }
                         //XOR display pixel 
-                        display[pixelIndex] ^= 0xFFFFFFFF;
+                        display[pixelIndex] ^= 1;
                     }
                 }
             }
