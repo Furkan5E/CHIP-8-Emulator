@@ -24,11 +24,16 @@ const uint8_t fontset[80] = {
 };
 
 Chip8::Chip8() {
+    reset();
+}
+
+void Chip8::reset() {
     //initialise program counter to standard ROM starting location
     pc = 0x200;
     opcode = 0;
     index = 0;
     sp = 0;
+    waitingKey = -1;
 
     //clear memory, registers, stack, display, and keypad arrays
     memset(memory, 0, sizeof(memory));
@@ -44,6 +49,19 @@ Chip8::Chip8() {
     for (unsigned int i = 0; i < 80; ++i) {
         memory[0x50 + i] = fontset[i];
     }
+}
+
+void Chip8::tickTimers() {
+    if (delay_timer > 0) {
+        --delay_timer;
+    }
+    if (sound_timer > 0) {
+        --sound_timer;
+    }
+}
+
+void Chip8::setKey(uint8_t key, bool pressed) {
+    keypad[key & 0xF] = pressed ? 1 : 0;
 }
 
 bool Chip8::loadROM(const char* filename) {

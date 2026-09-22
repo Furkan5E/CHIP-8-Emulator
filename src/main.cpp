@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
                 switch (e.key.keysym.sym) {
                     // QoL Controls
                     case SDLK_ESCAPE: 
-                        cpu = Chip8(); //reset CPU state
+                        cpu.reset(); //reset CPU state
                         if (!cpu.loadROM(romPath)) { //reload game
                             quit = true;
                         }
@@ -170,41 +170,41 @@ int main(int argc, char* argv[]) {
                         break;
 
                     //standard CHIP-8 Keypad
-                    case SDLK_x: cpu.keypad[0] = 1; break;
-                    case SDLK_1: cpu.keypad[1] = 1; break;
-                    case SDLK_2: cpu.keypad[2] = 1; break;
-                    case SDLK_3: cpu.keypad[3] = 1; break;
-                    case SDLK_q: cpu.keypad[4] = 1; break;
-                    case SDLK_w: cpu.keypad[5] = 1; break;
-                    case SDLK_e: cpu.keypad[6] = 1; break;
-                    case SDLK_a: cpu.keypad[7] = 1; break;
-                    case SDLK_s: cpu.keypad[8] = 1; break;
-                    case SDLK_d: cpu.keypad[9] = 1; break;
-                    case SDLK_z: cpu.keypad[0xA] = 1; break;
-                    case SDLK_c: cpu.keypad[0xB] = 1; break;
-                    case SDLK_4: cpu.keypad[0xC] = 1; break;
-                    case SDLK_r: cpu.keypad[0xD] = 1; break;
-                    case SDLK_f: cpu.keypad[0xE] = 1; break;
-                    case SDLK_v: cpu.keypad[0xF] = 1; break;
+                    case SDLK_x: cpu.setKey(0, true); break;
+                    case SDLK_1: cpu.setKey(1, true); break;
+                    case SDLK_2: cpu.setKey(2, true); break;
+                    case SDLK_3: cpu.setKey(3, true); break;
+                    case SDLK_q: cpu.setKey(4, true); break;
+                    case SDLK_w: cpu.setKey(5, true); break;
+                    case SDLK_e: cpu.setKey(6, true); break;
+                    case SDLK_a: cpu.setKey(7, true); break;
+                    case SDLK_s: cpu.setKey(8, true); break;
+                    case SDLK_d: cpu.setKey(9, true); break;
+                    case SDLK_z: cpu.setKey(0xA, true); break;
+                    case SDLK_c: cpu.setKey(0xB, true); break;
+                    case SDLK_4: cpu.setKey(0xC, true); break;
+                    case SDLK_r: cpu.setKey(0xD, true); break;
+                    case SDLK_f: cpu.setKey(0xE, true); break;
+                    case SDLK_v: cpu.setKey(0xF, true); break;
                 }
             } else if (e.type == SDL_KEYUP) {
                 switch (e.key.keysym.sym) {
-                    case SDLK_x: cpu.keypad[0] = 0; break;
-                    case SDLK_1: cpu.keypad[1] = 0; break;
-                    case SDLK_2: cpu.keypad[2] = 0; break;
-                    case SDLK_3: cpu.keypad[3] = 0; break;
-                    case SDLK_q: cpu.keypad[4] = 0; break;
-                    case SDLK_w: cpu.keypad[5] = 0; break;
-                    case SDLK_e: cpu.keypad[6] = 0; break;
-                    case SDLK_a: cpu.keypad[7] = 0; break;
-                    case SDLK_s: cpu.keypad[8] = 0; break;
-                    case SDLK_d: cpu.keypad[9] = 0; break;
-                    case SDLK_z: cpu.keypad[0xA] = 0; break;
-                    case SDLK_c: cpu.keypad[0xB] = 0; break;
-                    case SDLK_4: cpu.keypad[0xC] = 0; break;
-                    case SDLK_r: cpu.keypad[0xD] = 0; break;
-                    case SDLK_f: cpu.keypad[0xE] = 0; break;
-                    case SDLK_v: cpu.keypad[0xF] = 0; break;
+                    case SDLK_x: cpu.setKey(0, false); break;
+                    case SDLK_1: cpu.setKey(1, false); break;
+                    case SDLK_2: cpu.setKey(2, false); break;
+                    case SDLK_3: cpu.setKey(3, false); break;
+                    case SDLK_q: cpu.setKey(4, false); break;
+                    case SDLK_w: cpu.setKey(5, false); break;
+                    case SDLK_e: cpu.setKey(6, false); break;
+                    case SDLK_a: cpu.setKey(7, false); break;
+                    case SDLK_s: cpu.setKey(8, false); break;
+                    case SDLK_d: cpu.setKey(9, false); break;
+                    case SDLK_z: cpu.setKey(0xA, false); break;
+                    case SDLK_c: cpu.setKey(0xB, false); break;
+                    case SDLK_4: cpu.setKey(0xC, false); break;
+                    case SDLK_r: cpu.setKey(0xD, false); break;
+                    case SDLK_f: cpu.setKey(0xE, false); break;
+                    case SDLK_v: cpu.setKey(0xF, false); break;
                 }
             }
         }
@@ -214,23 +214,17 @@ int main(int argc, char* argv[]) {
                 cpu.cycle();
             }
 
-            //update timers and audio
-            if (cpu.delay_timer > 0) {
-                --cpu.delay_timer;
-            }
-            if (cpu.sound_timer > 0) {
-                SDL_PauseAudioDevice(audioDevice, 0); //play sound
-                --cpu.sound_timer;
-            } else {
-                SDL_PauseAudioDevice(audioDevice, 1); //pause sound
-            }
+            //play sound while the sound timer is running, then update timers
+            SDL_PauseAudioDevice(audioDevice, cpu.isSoundOn() ? 0 : 1);
+            cpu.tickTimers();
         } else {
             SDL_PauseAudioDevice(audioDevice, 1); //silence audio when paused
         }
 
         //map CPU display to custom colors
+        const uint32_t* display = cpu.getDisplay();
         for (int i = 0; i < 64 * 32; ++i) {
-            pixelBuffer[i] = (cpu.display[i] != 0) ? fgColor : bgColor;
+            pixelBuffer[i] = (display[i] != 0) ? fgColor : bgColor;
         }
 
         //draw mapped pixel buffer to screen
