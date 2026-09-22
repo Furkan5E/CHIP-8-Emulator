@@ -20,6 +20,28 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
     }
 }
 
+//keyboard key for each CHIP-8 key 0x0 to 0xF
+//  1 2 3 C        1 2 3 4
+//  4 5 6 D  --->  Q W E R
+//  7 8 9 E        A S D F
+//  A 0 B F        Z X C V
+const SDL_Keycode keymap[16] = {
+    SDLK_x, SDLK_1, SDLK_2, SDLK_3, // 0 1 2 3
+    SDLK_q, SDLK_w, SDLK_e, SDLK_a, // 4 5 6 7
+    SDLK_s, SDLK_d, SDLK_z, SDLK_c, // 8 9 A B
+    SDLK_4, SDLK_r, SDLK_f, SDLK_v  // C D E F
+};
+
+//return the CHIP-8 key for a keyboard key, or -1 if it isn't mapped
+int mapKey(SDL_Keycode sym) {
+    for (int i = 0; i < 16; ++i) {
+        if (keymap[i] == sym) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 //parse a whole string as an int within [min, max]
 bool parseInt(const char* text, int min, int max, int& out) {
     char* end = nullptr;
@@ -169,42 +191,19 @@ int main(int argc, char* argv[]) {
                         SDL_SetWindowTitle(window, isPaused ? "CHIP-8 Emulator [Paused]" : "CHIP-8 Emulator");
                         break;
 
-                    //standard CHIP-8 Keypad
-                    case SDLK_x: cpu.setKey(0, true); break;
-                    case SDLK_1: cpu.setKey(1, true); break;
-                    case SDLK_2: cpu.setKey(2, true); break;
-                    case SDLK_3: cpu.setKey(3, true); break;
-                    case SDLK_q: cpu.setKey(4, true); break;
-                    case SDLK_w: cpu.setKey(5, true); break;
-                    case SDLK_e: cpu.setKey(6, true); break;
-                    case SDLK_a: cpu.setKey(7, true); break;
-                    case SDLK_s: cpu.setKey(8, true); break;
-                    case SDLK_d: cpu.setKey(9, true); break;
-                    case SDLK_z: cpu.setKey(0xA, true); break;
-                    case SDLK_c: cpu.setKey(0xB, true); break;
-                    case SDLK_4: cpu.setKey(0xC, true); break;
-                    case SDLK_r: cpu.setKey(0xD, true); break;
-                    case SDLK_f: cpu.setKey(0xE, true); break;
-                    case SDLK_v: cpu.setKey(0xF, true); break;
+                    default: {
+                        //standard CHIP-8 Keypad
+                        int key = mapKey(e.key.keysym.sym);
+                        if (key >= 0) {
+                            cpu.setKey(key, true);
+                        }
+                        break;
+                    }
                 }
             } else if (e.type == SDL_KEYUP) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_x: cpu.setKey(0, false); break;
-                    case SDLK_1: cpu.setKey(1, false); break;
-                    case SDLK_2: cpu.setKey(2, false); break;
-                    case SDLK_3: cpu.setKey(3, false); break;
-                    case SDLK_q: cpu.setKey(4, false); break;
-                    case SDLK_w: cpu.setKey(5, false); break;
-                    case SDLK_e: cpu.setKey(6, false); break;
-                    case SDLK_a: cpu.setKey(7, false); break;
-                    case SDLK_s: cpu.setKey(8, false); break;
-                    case SDLK_d: cpu.setKey(9, false); break;
-                    case SDLK_z: cpu.setKey(0xA, false); break;
-                    case SDLK_c: cpu.setKey(0xB, false); break;
-                    case SDLK_4: cpu.setKey(0xC, false); break;
-                    case SDLK_r: cpu.setKey(0xD, false); break;
-                    case SDLK_f: cpu.setKey(0xE, false); break;
-                    case SDLK_v: cpu.setKey(0xF, false); break;
+                int key = mapKey(e.key.keysym.sym);
+                if (key >= 0) {
+                    cpu.setKey(key, false);
                 }
             }
         }
