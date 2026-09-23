@@ -15,10 +15,9 @@ set(SDL_TESTS OFF CACHE BOOL "Disable SDL tests" FORCE)
 set(SDL_SHARED OFF CACHE BOOL "Build static SDL2" FORCE)
 FetchContent_MakeAvailable(SDL2)
 
-#tell the compiler where the header files are
-include_directories(include)
-
 #tell CMake which files to compile into the .exe
 add_executable(chip8 src/main.cpp src/Chip8.cpp)
+#tell the compiler where the header files are (only for this target, not SDL)
+target_include_directories(chip8 PRIVATE include)
 #link the SDL2 library to  executable
 target_link_libraries(chip8 PRIVATE SDL2::SDL2-static)
