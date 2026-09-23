@@ -161,12 +161,12 @@ void Chip8::cycle() {
             break;
 
         case 0x6000: // 6XNN: set Vx = NN
-            registers[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
+            registers[(opcode & 0x0F00) >> 8] = static_cast<uint8_t>(opcode & 0x00FF);
             pc += 2;
             break;
 
         case 0x7000: // 7XNN: add NN to Vx
-            registers[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
+            registers[(opcode & 0x0F00) >> 8] += static_cast<uint8_t>(opcode & 0x00FF);
             pc += 2;
             break;
 
@@ -301,7 +301,7 @@ void Chip8::cycle() {
                     if (waitingKey < 0) {
                         for (int i = 0; i < 16; ++i) {
                             if (keypad[i] != 0) {
-                                waitingKey = i;
+                                waitingKey = static_cast<int8_t>(i);
                                 break;
                             }
                         }
@@ -335,7 +335,7 @@ void Chip8::cycle() {
 
                 case 0x0029: // FX29: set i = location of sprite for digit Vx
                     //characters are 5 bytes long
-                    index = 0x50 + (5 * registers[Vx]);
+                    index = static_cast<uint16_t>(0x50 + (5 * registers[Vx]));
                     pc += 2;
                     break;
 

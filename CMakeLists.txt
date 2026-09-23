@@ -19,5 +19,11 @@ FetchContent_MakeAvailable(SDL2)
 add_executable(chip8 src/main.cpp src/Chip8.cpp)
 #tell the compiler where the header files are (only for this target, not SDL)
 target_include_directories(chip8 PRIVATE include)
+#enable compiler warnings for our code only
+if(MSVC)
+    target_compile_options(chip8 PRIVATE /W4)
+else()
+    target_compile_options(chip8 PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 #link the SDL2 library to  executable
 target_link_libraries(chip8 PRIVATE SDL2::SDL2-static)

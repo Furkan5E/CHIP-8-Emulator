@@ -6,15 +6,15 @@
 #include <cerrno>
 #include <cstdlib>
 
-void audioCallback(void* userdata, Uint8* stream, int len) {
+void audioCallback(void* /*userdata*/, Uint8* stream, int len) {
     static int phase = 0;
     int16_t* buffer = (int16_t*)stream;
     int length = len / 2;
-    int volume = 3000;
+    const int16_t volume = 3000;
 
     for (int i = 0; i < length; ++i) {
         //switch between positive and negative volume every 50 samples
-        buffer[i] = (phase < 50) ? volume : -volume;
+        buffer[i] = (phase < 50) ? volume : static_cast<int16_t>(-volume);
         //wrap after one full period so the counter never overflows
         phase = (phase + 1) % 100;
     }
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
                         //standard CHIP-8 Keypad
                         int key = mapKey(e.key.keysym.scancode);
                         if (key >= 0) {
-                            cpu.setKey(key, true);
+                            cpu.setKey(static_cast<uint8_t>(key), true);
                         }
                         break;
                     }
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
             } else if (e.type == SDL_KEYUP) {
                 int key = mapKey(e.key.keysym.scancode);
                 if (key >= 0) {
-                    cpu.setKey(key, false);
+                    cpu.setKey(static_cast<uint8_t>(key), false);
                 }
             }
         }
