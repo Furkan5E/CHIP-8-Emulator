@@ -44,6 +44,18 @@ int mapKey(SDL_Scancode scancode) {
     return -1;
 }
 
+//mix two ARGB colors, amount 0 gives from and 255 gives to
+uint32_t blendColor(uint32_t from, uint32_t to, int amount) {
+    uint32_t result = 0xFF000000;
+    for (int shift = 0; shift <= 16; shift += 8) {
+        int a = (from >> shift) & 0xFF;
+        int b = (to >> shift) & 0xFF;
+        int mixed = a + (b - a) * amount / 255;
+        result |= static_cast<uint32_t>(mixed) << shift;
+    }
+    return result;
+}
+
 //parse a whole string as an int within [min, max]
 bool parseInt(const char* text, int min, int max, int& out) {
     char* end = nullptr;
@@ -62,19 +74,30 @@ int main(int argc, char* argv[]) {
     //default config
     int scale = 10;
     int speed = 10;
+    int fade = 4; //frames a pixel takes to fade out after turning off, 0 = off
     const char* romPath = nullptr;
-    const std::string usage = std::string("Usage: ") + argv[0] + " <ROM_FILE_PATH> [--scale <1-100>] [--speed <1-1000>]\n";
+    const std::string usage = std::string("Usage: ") + argv[0] + " <ROM_FILE_PATH> [--scale <1-100>] [--speed <1-1000>] [--fade <0-30>]\n";
 
     //parse command line arguments
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        if (arg == "--scale" || arg == "--speed") {
+        //option name -> variable it sets and its allowed range
+        int* value = nullptr;
+        int min = 1, max = 1;
+        if (arg == "--scale") {
+            value = &scale; max = 100;
+        } else if (arg == "--speed") {
+            value = &speed; max = 1000;
+        } else if (arg == "--fade") {
+            value = &fade; min = 0; max = 30;
+        }
+
+        if (value) {
             if (i + 1 >= argc) {
                 std::cerr << "Missing value for " << arg << "\n" << usage;
                 return -1;
             }
-            bool isScale = (arg == "--scale");
-            if (!parseInt(argv[++i], 1, isScale ? 100 : 1000, isScale ? scale : speed)) {
+            if (!parseInt(argv[++i], min, max, *value)) {
                 std::cerr << "Invalid value for " << arg << ": " << argv[i] << "\n" << usage;
                 return -1;
             }
@@ -161,6 +184,10 @@ int main(int argc, char* argv[]) {
     uint32_t fgColor = 0xFF33FF33;
     uint32_t bgColor = 0xFF111111;
     uint32_t pixelBuffer[64 * 32];
+    //brightness of each pixel from 0 (background) to 255 (foreground)
+    int brightness[64 * 32] = {};
+    //with fade N an off pixel shows N dimming frames before reaching the background
+    const int fadeStep = 255 / (fade + 1);
 
     SDL_Event e;
     const int FPS = 60;
@@ -223,9 +250,16 @@ int main(int argc, char* argv[]) {
         }
 
         //map CPU display to custom colors
+        //pixels turn on instantly but fade out over a few frames, which hides the
+        //flicker from games erasing and redrawing sprites across frames
         const uint8_t* display = cpu.getDisplay();
         for (int i = 0; i < 64 * 32; ++i) {
-            pixelBuffer[i] = (display[i] != 0) ? fgColor : bgColor;
+            if (display[i] != 0) {
+                brightness[i] = 255;
+            } else {
+                brightness[i] = (brightness[i] > fadeStep) ? brightness[i] - fadeStep : 0;
+            }
+            pixelBuffer[i] = blendColor(bgColor, fgColor, brightness[i]);
         }
 
         //draw mapped pixel buffer to screen
